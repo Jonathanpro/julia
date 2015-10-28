@@ -238,3 +238,20 @@ begin
     close(csock)
     close(sock)
 end
+
+# Local-machine multicast
+
+let
+    function create_socket()
+        s = UDPSocket()
+        bind(s, ip"0.0.0.0", 2000, reuseaddr = true, enable_broadcast = true)
+        s
+    end
+    a, b, c = [create_socket() for i = 1:3]
+    @sync begin
+        @async @test bytestring(recv(a)) == "hello"
+        @async @test bytestring(recv(b)) == "hello"
+        send(c, ip"255.255.255.255", 2000, "hello")
+    end
+    [close(s) for s in [a, b, c]]
+end
